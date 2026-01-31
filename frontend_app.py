@@ -15,6 +15,29 @@ st.set_page_config(
 if "page" not in st.session_state:
     st.session_state.page = "landing"
 
+# Handle Navigation from HTML Links (Query Params)
+# This allows our custom HTML header links to change the Streamlit page state
+try:
+    # Try modern Streamlit API
+    query_params = st.query_params
+    if "nav" in query_params:
+        nav_target = query_params["nav"]
+        if nav_target in ["login", "register", "landing", "app"]:
+            st.session_state.page = nav_target
+        # Clear params to prevent getting stuck on one page on reload
+        st.query_params.clear()
+except:
+    # Fallback for older Streamlit versions
+    try:
+        query_params = st.experimental_get_query_params()
+        if "nav" in query_params:
+            nav_target = query_params["nav"][0]
+            if nav_target in ["login", "register", "landing", "app"]:
+                st.session_state.page = nav_target
+            st.experimental_set_query_params()
+    except:
+        pass
+
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
 
@@ -666,7 +689,7 @@ def landing_page():
     .header-nav {
         display: flex;
         align-items: center;
-        gap: 20px;
+        gap: 24px;
         height: 100%;
     }
     
@@ -692,14 +715,16 @@ def landing_page():
         top: 70px;
         left: -20px;
         width: 320px;
-        background: white;
-        border-radius: 8px;
-        box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-        padding: 10px 0;
+        background: rgba(44, 44, 46, 0.95); /* Medium transparent grey */
+        backdrop-filter: blur(16px); /* Strong blur */
+        -webkit-backdrop-filter: blur(16px);
+        border-radius: 12px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        padding: 10px;
         display: none; /* Hidden by default */
         flex-direction: column;
         z-index: 100001;
-        border: 1px solid rgba(0,0,0,0.05);
+        border: 1px solid rgba(255,255,255,0.1);
     }
     
     /* Show on Hover */
@@ -756,14 +781,14 @@ def landing_page():
     .dd-title {
         font-weight: 700;
         font-size: 0.85rem;
-        color: #0071e3;
+        color: white; /* Changed to white for dark background */
         margin-bottom: 2px;
         text-transform: uppercase;
         letter-spacing: 0.5px;
     }
     .dd-desc {
         font-size: 0.8rem;
-        color: #6e6e73;
+        color: #a1a1a6; /* Lighter grey for dark background */
         line-height: 1.3;
     }
     
@@ -850,6 +875,7 @@ Products ▾
 </div>
 </div>
 <a class="header-cta">Get a free resume review</a>
+<a class="header-cta" href="?nav=login" target="_self">Log In</a>
 </div>
 </div>
 """, unsafe_allow_html=True)
@@ -1178,81 +1204,340 @@ Products ▾
     """, unsafe_allow_html=True)
 
 
-    st.markdown("<br><br>", unsafe_allow_html=True)
+    st.markdown("""
+    <div style="margin: 40px auto; max-width: 1000px; padding: 0 20px;">
+        <div style="text-align: center; margin-bottom: 20px;">
+            <h3 style="font-weight: 600; font-size: 1.5rem;">Our Location</h3>
+            <p style="color: #86868b;">Visit us in the heart of Pune</p>
+        </div>
+        <div style="border-radius: 18px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.1); border: 1px solid rgba(0,0,0,0.1);">
+            <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d242117.68106376834!2d73.72287836854586!3d18.524616453761763!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3bc2bf2e67461101%3A0x828d43bf9d9ee343!2sPune%2C%20Maharashtra!5e0!3m2!1sen!2sin!4v1706775640705!5m2!1sen!2sin" width="100%" height="400" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
 
 def login_page():
-    # Back button
-    c_back, _ = st.columns([1, 6])
-    with c_back:
-        if st.button("← Back"):
-            st.session_state.page = "landing"
-            st.rerun()
+    # Custom CSS for this page to match Apple ID style
+    st.markdown("""
+        <style>
+        [data-testid="stHeader"] { display: none; }
+        .block-container { padding-top: 2rem; padding-bottom: 5rem; }
+        
+        /* Input Field Styling */
+        div[data-testid="stTextInput"] {
+            position: relative !important;
+            overflow: visible !important;
+        }
+        
+        div[data-baseweb="base-input"] {
+            overflow: visible !important;
+            background-color: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            width: 100% !important;
+        }
+        
+        div[data-baseweb="input"] {
+            background-color: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            width: 100% !important;
+        }
 
-    st.markdown("<br>", unsafe_allow_html=True)
+        /* Move Password Toggle Button Inside */
+        button[aria-label="Show password text"] {
+            position: absolute !important;
+            right: 12px !important;
+            top: 50% !important;
+            transform: translateY(-50%) !important;
+            border: none !important;
+            background: transparent !important;
+            color: #86868b !important;
+            z-index: 5 !important;
+        }
+        button[aria-label="Show password text"]:hover {
+            color: #0071e3 !important;
+            background: transparent !important;
+        }
+        
+        /* Floating Label Styling */
+        div[data-testid="stTextInput"] label {
+            display: block !important;
+            position: absolute !important;
+            top: 18px !important;
+            left: 16px !important;
+            font-size: 17px !important;
+            color: #86868b !important;
+            pointer-events: none !important;
+            transition: all 0.2s ease !important;
+            z-index: 10 !important;
+        }
+
+        div[data-testid="stTextInput"]:focus-within label,
+        div[data-testid="stTextInput"]:has(input:not(:placeholder-shown)) label {
+            top: 6px !important;
+            font-size: 12px !important;
+        }
+        
+        .stTextInput input {
+            padding-top: 24px !important;
+            padding-bottom: 8px !important;
+            padding-left: 16px !important;
+            padding-right: 40px !important;
+            font-size: 17px !important;
+            height: 56px !important;
+            border-radius: 12px !important;
+            border: 1px solid #d2d2d7 !important;
+            line-height: 1.2 !important;
+            width: 100% !important;
+            box-sizing: border-box !important;
+        }
+        
+        .stTextInput input:focus {
+            border-color: #0071e3 !important;
+            box-shadow: 0 0 0 4px rgba(0,113,227,0.1) !important;
+        }
+        
+        /* Primary Button */
+        div[data-testid="stBaseButton-primary"] button {
+            background-color: #0071e3 !important;
+            border-radius: 12px !important;
+            padding-top: 0.8rem !important;
+            padding-bottom: 0.8rem !important;
+            font-size: 1.1rem !important;
+            font-weight: 400 !important;
+            border: none !important;
+        }
+        div[data-testid="stBaseButton-primary"] button:hover {
+            background-color: #0077ed !important;
+        }
+        
+        /* Secondary Button (Passkey) */
+        div[data-testid="stBaseButton-secondary"] button {
+            background-color: #1d1d1f !important;
+            color: white !important;
+            border-radius: 12px !important;
+            padding-top: 0.8rem !important;
+            padding-bottom: 0.8rem !important;
+            font-size: 1.1rem !important;
+            font-weight: 400 !important;
+            border: none !important;
+        }
+        div[data-testid="stBaseButton-secondary"] button:hover {
+            background-color: #2c2c2e !important;
+            color: white !important;
+            border: none !important;
+        }
+        
+        /* Link styling for buttons */
+        .create-account-btn button, .forgot-password-btn button {
+            background: none !important;
+            border: none !important;
+            color: #0071e3 !important;
+            font-size: 0.95rem !important;
+            padding: 0 !important;
+            box-shadow: none !important;
+            margin: 0 auto !important;
+            display: block !important;
+        }
+        .create-account-btn button:hover, .forgot-password-btn button:hover {
+            text-decoration: underline !important;
+            background: none !important;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+
+
+    # Top Right Back Button
+    col_spacer, col_back = st.columns([6, 1])
+    with col_back:
+        if st.button("← Home", key="back_home_top"):
+             st.session_state.page = "landing"
+             st.rerun()
+
+    # Spacer
+    st.markdown("<div style='height: 2vh;'></div>", unsafe_allow_html=True)
     
-    # Centered Auth Card
+    # Main Container
     _, col, _ = st.columns([1, 1.2, 1])
     with col:
-        # Apple-style Header
+        # Logo and Header
         st.markdown("""
-            <div style="text-align: center; margin-bottom: 2rem;">
-                <div style="font-size: 4rem; margin-bottom: 10px; animation: float 6s ease-in-out infinite;">🍏</div>
-                <div class="auth-header">Sign In</div>
-                <div class="auth-sub">Welcome back to ResumeAI</div>
+            <div style="text-align: center; margin-bottom: 40px;">
+                <div style="font-size: 5rem; margin-bottom: 10px;">🍏</div>
+                <h1 style="font-size: 32px; font-weight: 600; color: #1d1d1f; margin: 0; letter-spacing: -0.5px;">Sign in to ResumeAI</h1>
+            </div>
+        """, unsafe_allow_html=True)
+        
+        # Form
+        username = st.text_input("Email or Phone Number", placeholder=" ", label_visibility="visible")
+        password = st.text_input("Password", placeholder=" ", type="password", label_visibility="visible")
+        
+        st.markdown("<div style='margin-bottom: 20px;'></div>", unsafe_allow_html=True)
+
+        # Forgot Password Button
+        if st.button("Forgot Password?", type="secondary", use_container_width=True, key="forgot_pass"):
+            st.info("Password reset functionality coming soon!")
+        
+        st.markdown("<div style='margin-bottom: 20px;'></div>", unsafe_allow_html=True)
+        
+        # Privacy Icon Section
+        st.markdown("""
+            <div style="display: flex; align-items: start; gap: 15px; margin-bottom: 40px; text-align: left; font-size: 13px; color: #333; padding: 0 10px;">
+                <div style="font-size: 30px; color: #0071e3; line-height: 1;">👥</div>
+                <div style="line-height: 1.4; color: #1d1d1f;">
+                    Your ResumeAI account information is used to allow you to sign in securely and access your data. 
+                    <a href="#" style="color: #0071e3; text-decoration: none;">See how your data is managed...</a>
+                </div>
             </div>
         """, unsafe_allow_html=True)
 
-        username = st.text_input("Username", placeholder="Username", label_visibility="collapsed")
-        st.markdown("<div style='margin-bottom: 10px;'></div>", unsafe_allow_html=True)
-        password = st.text_input("Password", type="password", placeholder="Password", label_visibility="collapsed")
-        
-        st.markdown("<br>", unsafe_allow_html=True)
-        
-        if st.button("Sign In", type="primary", use_container_width=True):
-            if auth.login_user(username, password):
+        # Continue Button
+        if st.button("Continue", type="primary", use_container_width=True):
+             if auth.login_user(username, password):
                 st.session_state.logged_in = True
                 st.session_state.username = username
                 st.success("Login successful!")
                 st.session_state.page = "app"
                 st.rerun()
-            else:
+             else:
                 st.error("Invalid username or password")
-        
-        st.markdown("""
-            <div style="text-align: center; margin-top: 30px; margin-bottom: 10px; color: #86868b; font-size: 0.9rem;">
-                New to ResumeAI?
+
+        st.markdown("<div style='margin-bottom: 15px;'></div>", unsafe_allow_html=True)
+
+        # Register Button (Secondary)
+        if st.button("Don't have an account ? Register now", type="secondary", use_container_width=True):
+             st.session_state.page = "register"
+             st.rerun()
+            
+
+
+
+    # Footer
+    st.markdown("""
+        <div style="position: fixed; bottom: 0; left: 0; width: 100%; background: #f5f5f7; padding: 20px 40px; border-top: 1px solid #d2d2d7; display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: #86868b; z-index: 1000;">
+            <div>Copyright © 2026 ResumeAI Inc. All rights reserved.</div>
+            <div style="display: flex; gap: 20px;">
+                <span style="cursor: pointer;">Privacy Policy</span>
+                <span style="cursor: pointer;">Terms of Use</span>
+                <span style="cursor: pointer;">India</span>
             </div>
-        """, unsafe_allow_html=True)
-        
-        if st.button("Create Account", use_container_width=True):
-            st.session_state.page = "register"
-            st.rerun()
+        </div>
+    """, unsafe_allow_html=True)
 
 def register_page():
-    # Back button
-    c_back, _ = st.columns([1, 6])
-    with c_back:
-        if st.button("← Back"):
-            st.session_state.page = "landing"
-            st.rerun()
+    # Custom CSS (Reuse same style as login for consistency)
+    st.markdown("""
+        <style>
+        [data-testid="stHeader"] { display: none; }
+        .block-container { padding-top: 2rem; padding-bottom: 5rem; }
+        
+        /* Input Field Styling */
+        div[data-testid="stTextInput"] {
+            position: relative !important;
+            overflow: visible !important;
+        }
+        
+        div[data-baseweb="base-input"] {
+            overflow: visible !important;
+            background-color: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            width: 100% !important;
+        }
+        
+        div[data-baseweb="input"] {
+            background-color: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            width: 100% !important;
+        }
 
-    st.markdown("<br>", unsafe_allow_html=True)
+        /* Move Password Toggle Button Inside */
+        button[aria-label="Show password text"] {
+            position: absolute !important;
+            right: 12px !important;
+            top: 50% !important;
+            transform: translateY(-50%) !important;
+            border: none !important;
+            background: transparent !important;
+            color: #86868b !important;
+            z-index: 5 !important;
+        }
+        button[aria-label="Show password text"]:hover {
+            color: #0071e3 !important;
+            background: transparent !important;
+        }
+        
+        /* Floating Label Styling */
+        div[data-testid="stTextInput"] label {
+            display: block !important;
+            position: absolute !important;
+            top: 18px !important;
+            left: 16px !important;
+            font-size: 17px !important;
+            color: #86868b !important;
+            pointer-events: none !important;
+            transition: all 0.2s ease !important;
+            z-index: 10 !important;
+        }
+
+        div[data-testid="stTextInput"]:focus-within label,
+        div[data-testid="stTextInput"]:has(input:not(:placeholder-shown)) label {
+            top: 6px !important;
+            font-size: 12px !important;
+        }
+        
+        .stTextInput input {
+            padding-top: 24px !important;
+            padding-bottom: 8px !important;
+            padding-left: 16px !important;
+            padding-right: 40px !important;
+            font-size: 17px !important;
+            height: 56px !important;
+            border-radius: 12px !important;
+            border: 1px solid #d2d2d7 !important;
+            line-height: 1.2 !important;
+            width: 100% !important;
+            box-sizing: border-box !important;
+        }
+        
+        .stTextInput input:focus {
+            border-color: #0071e3 !important;
+            box-shadow: 0 0 0 4px rgba(0,113,227,0.1) !important;
+        }
+        
+        div[data-testid="stBaseButton-primary"] button {
+            background-color: #0071e3 !important;
+            border-radius: 12px !important;
+            padding-top: 0.8rem !important;
+            padding-bottom: 0.8rem !important;
+            font-size: 1.1rem !important;
+            font-weight: 400 !important;
+            border: none !important;
+        }
+        div[data-testid="stBaseButton-primary"] button:hover {
+            background-color: #0077ed !important;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+
+    # Spacer
+    st.markdown("<div style='height: 8vh;'></div>", unsafe_allow_html=True)
     
     _, col, _ = st.columns([1, 1.2, 1])
     with col:
         st.markdown("""
-            <div style="text-align: center; margin-bottom: 2rem;">
-                <div style="font-size: 4rem; margin-bottom: 10px; animation: float 6s ease-in-out infinite;">🍏</div>
-                <div class="auth-header">Create Account</div>
-                <div class="auth-sub">Join the future of career building</div>
+            <div style="text-align: center; margin-bottom: 40px;">
+                <div style="font-size: 5rem; margin-bottom: 10px;">🍏</div>
+                <h1 style="font-size: 32px; font-weight: 600; color: #1d1d1f; margin: 0; letter-spacing: -0.5px;">Create Your Account</h1>
+                <div style="font-size: 1.1rem; color: #86868b; margin-top: 10px;">One account for all things ResumeAI.</div>
             </div>
         """, unsafe_allow_html=True)
 
-        new_user = st.text_input("Choose Username", placeholder="Username", label_visibility="collapsed")
-        st.markdown("<div style='margin-bottom: 10px;'></div>", unsafe_allow_html=True)
-        new_pass = st.text_input("Choose Password", type="password", placeholder="Password", label_visibility="collapsed")
-        st.markdown("<div style='margin-bottom: 10px;'></div>", unsafe_allow_html=True)
-        confirm_pass = st.text_input("Confirm Password", type="password", placeholder="Confirm Password", label_visibility="collapsed")
+        new_user = st.text_input("Choose Username", placeholder=" ", label_visibility="visible")
+        new_pass = st.text_input("Choose Password", type="password", placeholder=" ", label_visibility="visible")
+        confirm_pass = st.text_input("Confirm Password", type="password", placeholder=" ", label_visibility="visible")
         
         st.markdown("<br>", unsafe_allow_html=True)
         
@@ -1278,6 +1563,18 @@ def register_page():
         if st.button("Sign In", use_container_width=True):
             st.session_state.page = "login"
             st.rerun()
+
+    # Footer
+    st.markdown("""
+        <div style="position: fixed; bottom: 0; left: 0; width: 100%; background: #f5f5f7; padding: 20px 40px; border-top: 1px solid #d2d2d7; display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: #86868b; z-index: 1000;">
+            <div>Copyright © 2026 ResumeAI Inc. All rights reserved.</div>
+            <div style="display: flex; gap: 20px;">
+                <span style="cursor: pointer;">Privacy Policy</span>
+                <span style="cursor: pointer;">Terms of Use</span>
+                <span style="cursor: pointer;">India</span>
+            </div>
+        </div>
+    """, unsafe_allow_html=True)
 
 def main_app():
     # Check if logged in
